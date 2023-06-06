@@ -11,7 +11,8 @@ from tkinter import filedialog, messagebox, ttk
 from sys import exit
 
 # Переменная порога градации серого. Меньше значение переменной - меньше деталей.
-threshold = 210
+threshold = 120
+# txt_widget = None
 
 
 def convert():
@@ -83,24 +84,62 @@ def convert():
 
 
 def print_result():
+    global txt_widget
     with open((os.path.splitext(filename)[0] + '.c'), "r") as f:
         text = f.read()
     lines = text.splitlines()
     selected_lines = lines[0:34]
-    txt_widget = tk.Text(root)
-    txt_widget.pack(fill="both", expand=True)
+    # txt_widget = tk.Text(root)
+    # txt_widget.pack(fill="both", expand=True)
+    txt_widget.delete("1.0", "end")
     for line in selected_lines:
         txt_widget.insert("end", line + "\n")
 
 
+def push_enter(event):
+    click_button()
+
 def click_button():
-    threshold = int(threshold_entry.get())
+    global threshold
+    threshold_str = threshold_entry.get()
+    if threshold_str.isdigit():
+        if int(threshold_str) < 256:
+            threshold = int(threshold_str)
+        else:
+            threshold = 100
+            threshold_value.set(str(threshold))
+            ttk.Entry(root, textvariable=threshold_value)
+            messagebox.showwarning("Предупреждение!", "Число должно быть от 0 до 255")
+    else:
+        threshold = 100
+        threshold_value.set(str(threshold))
+        ttk.Entry(root, textvariable=threshold_value)
+        messagebox.showwarning("Предупреждение!", "Число должно быть от 0 до 255")
     convert()
     print_result()
+    print(threshold)
+
+
+def click_button_down():
+    global threshold
+    threshold = threshold - 1
+    threshold_value.set(str(threshold))
+    threshold_entry = ttk.Entry(root, textvariable=threshold_value)
+
+
+def click_button_up():
+    global threshold
+    threshold = threshold + 1
+    threshold_value.set(str(threshold))
+    threshold_entry = ttk.Entry(root, textvariable=threshold_value)
+
 
 root = tk.Tk()
-root.geometry("1000x600")
+root.geometry("1000x700")
 root.withdraw()
+
+txt_widget = tk.Text(root)
+txt_widget.pack(fill="both", expand=True)
 
 filename = filedialog.askopenfilename()
 name, extension = os.path.splitext(str(filename))
@@ -112,8 +151,17 @@ if extension.lower() != ".bmp":
 root.deiconify()
 convert()
 print_result()
-btn = ttk.Button(text="Еще раз", command=click_button)
+btn_up = ttk.Button(text="+ 1", command=click_button_up)
+btn_up.pack()
+btn = ttk.Button(text="Обновить", command=click_button)
 btn.pack()
-threshold_entry = ttk.Entry()
-threshold_entry.pack(anchor="s", padx=8, pady= 8)
+btn_down = ttk.Button(text="- 1", command=click_button_down)
+btn_down.pack()
+
+threshold_value = tk.StringVar()
+threshold_value.set(str(threshold))
+threshold_entry = ttk.Entry(root, textvariable=threshold_value)
+threshold_entry.pack(anchor="s", padx=8, pady=4)
+
+root.bind('<Return>', push_enter)
 root.mainloop()
